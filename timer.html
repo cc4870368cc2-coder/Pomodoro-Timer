@@ -74,92 +74,97 @@
     <script>
         // JavaScript (網頁的行為邏輯)
 
-        // 1. 設置變數
-        const display = document.getElementById('display');
-        const startButton = document.getElementById('startButton');
-        const resetButton = document.getElementById('resetButton');
-        const message = document.getElementById('message');
+// 1. 設置變數
+const display = document.getElementById('display');
+const startButton = document.getElementById('startButton');
+const resetButton = document.getElementById('resetButton');
+const message = document.getElementById('message');
 
-        const DEFAULT_TIME = 15 * 60; // 15分鐘 * 60秒
-        let timeRemaining = DEFAULT_TIME;
-        let timerInterval;
-        let isRunning = false;
-        
-        // 為了播放聲音提醒，我們需要一個 Audio 物件
-        const alarmSound = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'); 
-        // 備註：這裡使用了一個網路上的鈴聲檔案，確保您可以直接運行。
-        
-        // 2. 格式化時間 (將秒數轉換為 MM:SS)
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            
-            // 確保分鐘和秒數都是兩位數
-            const formattedMinutes = String(minutes).padStart(2, '0');
-            const formattedSeconds = String(remainingSeconds).padStart(2, '0');
-            
-            return `${formattedMinutes}:${formattedSeconds}`;
-        }
-        
-        // 3. 更新計時器顯示
-        function updateDisplay() {
-            display.textContent = formatTime(timeRemaining);
-        }
-        
-        // 4. 開始倒數計時
-        function startTimer() {
-            if (isRunning) return; // 已經在運行中，避免重複點擊
-            isRunning = true;
-            startButton.textContent = '暫停 (Pause)'; // 將按鈕文字改為暫停
-            message.textContent = ''; // 清除結束訊息
-            
-            timerInterval = setInterval(() => {
-                timeRemaining--;
-                updateDisplay();
-                
-                if (timeRemaining <= 0) {
-                    clearInterval(timerInterval); // 停止計時
-                    isRunning = false;
-                    startButton.textContent = '開始 (Start)'; // 恢復開始按鈕文字
-                    timeRemaining = 0; // 確保顯示 00:00
-                    updateDisplay();
-                    
-                    // 執行提醒功能
-                    message.textContent = '休息時間到了！';
-                    alarmSound.play(); // 播放聲音
-                }
-            }, 1000); // 每 1000 毫秒 (1秒) 執行一次
-        }
+const DEFAULT_TIME = 15 * 60; // 15分鐘 * 60秒
+let timeRemaining = DEFAULT_TIME;
+let timerInterval;
+let isRunning = false;
 
-        // 5. 暫停/恢復計時
-        function toggleTimer() {
-            if (isRunning) {
-                clearInterval(timerInterval); // 暫停
-                isRunning = false;
-                startButton.textContent = '繼續 (Resume)';
-            } else {
-                startTimer(); // 恢復
-            }
-        }
-        
-        // 6. 重設計時器
-        function resetTimer() {
-            clearInterval(timerInterval);
-            isRunning = false;
+// 為了播放聲音提醒，我們需要一個 Audio 物件
+const alarmSound = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'); 
+
+// 2. 格式化時間 (將秒數轉換為 MM:SS)
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    // 確保分鐘和秒數都是兩位數
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+
+    return `${formattedMinutes}:${formattedSeconds}`;
+}
+
+// 3. 更新計時器顯示
+function updateDisplay() {
+    display.textContent = formatTime(timeRemaining);
+}
+
+// 4. 倒數計時核心邏輯
+function tick() {
+    timeRemaining--;
+    updateDisplay();
+
+    if (timeRemaining <= 0) {
+        clearInterval(timerInterval); // 停止計時
+        isRunning = false;
+        startButton.textContent = '重新開始 (Start)'; // 時間到後顯示重新開始
+        timeRemaining = 0;
+        updateDisplay();
+
+        // 執行提醒功能
+        message.textContent = '休息時間到了！';
+        alarmSound.play(); // 播放聲音
+    }
+}
+
+// 5. 開始/暫停/繼續 計時
+function toggleTimer() {
+    if (isRunning) {
+        // 狀態：運行中 -> 暫停
+        clearInterval(timerInterval);
+        isRunning = false;
+        startButton.textContent = '繼續 (Resume)';
+        message.textContent = '計時已暫停...';
+    } else {
+        // 狀態：暫停/停止 -> 開始
+        isRunning = true;
+        startButton.textContent = '暫停 (Pause)';
+        message.textContent = ''; // 清除訊息
+
+        // 如果時間為 0，則重設為預設時間
+        if (timeRemaining === 0) {
             timeRemaining = DEFAULT_TIME;
             updateDisplay();
-            startButton.textContent = '開始 (Start)';
-            message.textContent = ''; // 清除結束訊息
-            alarmSound.pause(); // 停止可能的聲音播放
-            alarmSound.currentTime = 0; // 讓聲音從頭開始
         }
-        
-        // 7. 綁定按鈕事件
-        startButton.addEventListener('click', toggleTimer);
-        resetButton.addEventListener('click', resetTimer);
-        
-        // 8. 首次載入時初始化顯示
-        updateDisplay();
+
+        timerInterval = setInterval(tick, 1000);
+    }
+}
+
+// 6. 重設計時器
+function resetTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+    timeRemaining = DEFAULT_TIME;
+    updateDisplay();
+    startButton.textContent = '開始 (Start)';
+    message.textContent = ''; 
+    alarmSound.pause(); 
+    alarmSound.currentTime = 0; 
+}
+
+// 7. 綁定按鈕事件
+startButton.addEventListener('click', toggleTimer);
+resetButton.addEventListener('click', resetTimer);
+
+// 8. 首次載入時初始化顯示
+updateDisplay();
     </script>
 </body>
 </html>
